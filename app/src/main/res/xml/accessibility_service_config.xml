@@ -1,0 +1,10 @@
+<!-- ** File: app/src/main/res/xml/accessibility_service_config.xml ** -->
+<!-- This XML file defines the behavior and permissions of the Accessibility Service. -->
+<!-- The packageNames attribute has been removed to allow the service to listen to events from all applications. -->
+<accessibility-service xmlns:android="http://schemas.android.com/apk/res/android"
+    android:accessibilityEventTypes="typeViewClicked|typeWindowStateChanged|typeViewTextChanged|typeViewScrolled|typeWindowContentChanged"
+    android:accessibilityFlags="flagReportViewIds|flagIncludeNotImportantViews"
+    android:canRetrieveWindowContent="true"
+    android:description="@string/accessibility_service_description"
+    android:notificationTimeout="100"
+    android:settingsActivity="com.example.myaccessibilityapp.MainActivity" />

@@ -1,0 +1,57 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/floating_warning_container"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content"
+    android:background="@drawable/rounded_background_warning"
+    android:orientation="horizontal"
+    android:padding="8dp"
+    android:gravity="center_vertical"
+    android:elevation="4dp"
+    android:layout_margin="16dp">
+
+    <!-- Avatar for "T-buddy" -->
+    <ImageView
+        android:id="@+id/buddy_avatar"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:src="@drawable/ic_buddy"
+        android:contentDescription="T-buddy Avatar"
+        android:layout_marginEnd="8dp"
+        tools:src="@tools:sample/avatars" />
+
+    <!-- Text for the "T-buddy" label -->
+    <TextView
+        android:id="@+id/buddy_label"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:text="T-buddy"
+        android:textColor="@android:color/white"
+        android:textSize="18sp"
+        android:textStyle="bold"
+        android:layout_marginEnd="8dp" />
+
+    <!-- Warning Message -->
+    <TextView
+        android:id="@+id/warning_message"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:textColor="@android:color/white"
+        android:text="Warning message here."
+        android:textSize="16sp"
+        android:layout_weight="1"
+        android:layout_marginEnd="16dp" />
+
+    <!-- Close button -->
+    <ImageView
+        android:id="@+id/close_button"
+        android:layout_width="24dp"
+        android:layout_height="24dp"
+        android:src="@android:drawable/ic_menu_close_clear_cancel"
+        android:contentDescription="Close Warning"
+        android:clickable="true"
+        android:focusable="true"
+        android:tint="@android:color/white" />
+
+</LinearLayout>

@@ -1,0 +1,7 @@
+<!-- ** File: app/src/main/res/values/strings.xml ** -->
+<!-- This file ensures the string resource name matches the manifest. -->
+<resources>
+    <string name="app_name">MyAccessibilityApp</string>
+    <string name="accessibility_service_label">My Custom Accessibility Service</string>
+    <string name="accessibility_service_description">This service monitors app events to provide custom accessibility features.</string>
+</resources>

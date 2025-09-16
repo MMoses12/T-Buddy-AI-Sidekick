@@ -1,0 +1,8 @@
+<resources>
+    <color name="t_magenta">#E10075</color>
+    <color name="t_magenta_light">#FF6FD8</color>
+    <color name="t_plum">#8A004F</color>
+    <color name="bg_dark">#101014</color>
+    <color name="fg_white">#FFFFFF</color>
+    <color name="fg_subtle">#DADBE1</color>
+</resources>
