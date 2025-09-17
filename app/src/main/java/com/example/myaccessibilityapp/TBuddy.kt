@@ -25,7 +25,7 @@ class TBuddy : AccessibilityService() {
     private val gson = Gson()
     private val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:5000/") // emulator; on device use PC LAN IP
+            .baseUrl("http://127.0.0.1:5000/")
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
@@ -186,9 +186,9 @@ class TBuddy : AccessibilityService() {
 
         Log.d(TAG, "Typed message captured from $pkg: \"$typed\"")
 
-        withContext(Dispatchers.Main) {
-            showCoachBubble("T-Buddy", "🔎 Checking your message…")
-        }
+//        withContext(Dispatchers.Main) {
+//            showCoachBubble("T-Buddy", "🔎 Checking your message…")
+//        }
         val warning = analyzeTextWithApi(typed)
         withContext(Dispatchers.Main) { showWarningOrHide(warning) }
     }
