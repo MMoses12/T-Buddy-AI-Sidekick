@@ -56,6 +56,8 @@ class TBuddy : AccessibilityService() {
     private var lastSuggestedRewrite: String? = null
     private var lastVerdict: String? = null
     private var lastConfidence: String? = null
+    private var lastMessage: String? = null
+
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -195,7 +197,7 @@ class TBuddy : AccessibilityService() {
 //        withContext(Dispatchers.Main) {
 //            showCoachBubble("T-Buddy", "🔎 Checking your message…")
 //        }
-        val warning = analyzeTextWithApi(typed)
+        val warning = analyzeTextWithApi(typed, isOutgoing = true)
         withContext(Dispatchers.Main) { showWarningOrHide(warning) }
     }
 
@@ -343,6 +345,7 @@ class TBuddy : AccessibilityService() {
             putExtra("suggested_rewrite", lastSuggestedRewrite)
             putExtra("verdict", lastVerdict)
             putExtra("confidence", lastConfidence)
+            putExtra("message", lastMessage)
         }
         startActivity(intent)
     }
@@ -365,12 +368,13 @@ class TBuddy : AccessibilityService() {
                 }
 
                 // --- NEW: capture result block for UI ---
-                body?.result?.let { r ->
-                    lastRecommendation   = r.recommendation
-                    lastVerdict          = r.verdict
-                    lastConfidence       = r.confidence
-                    lastSuggestedRewrite = if (isOutgoing) r.suggested_rewrite else null
-                    Log.d(TAG, "result: verdict=${r.verdict}, conf=${r.confidence}, rec=${r.recommendation}, rewrite=$lastSuggestedRewrite")
+                body?.result?.let {
+                    lastRecommendation   = it.recommendation
+                    lastVerdict          = it.verdict
+                    lastConfidence       = it.confidence
+                    lastSuggestedRewrite = if (isOutgoing) it.suggested_rewrite else null
+                    lastMessage          = it.message
+                    Log.d(TAG, "result: verdict=${it.verdict}, conf=${it.confidence}, rec=${it.recommendation}, rewrite=$lastSuggestedRewrite")
                 }
             } else {
                 Log.e(TAG, "API failed: ${response.code()} ${response.message()}")

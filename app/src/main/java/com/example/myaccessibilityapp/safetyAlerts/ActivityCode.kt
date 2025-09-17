@@ -24,6 +24,7 @@ class SafetyAlertsActivity : AppCompatActivity() {
         val suggestedRewrite = intent.getStringExtra("suggested_rewrite")// only for outgoing
         val verdict          = intent.getStringExtra("verdict")          // e.g. "SAFE"
         val confidence       = intent.getStringExtra("confidence")       // e.g. "100"
+        val message       = intent.getStringExtra("message")       // e.g. "100"
 
         // Build the single alert strictly from the intent values
         val suggestionsParagraph = buildString {
@@ -49,23 +50,12 @@ class SafetyAlertsActivity : AppCompatActivity() {
 
         val alert = Alert(
             title = "Analysis Result",
-            message = buildVerdictMessage(verdict, confidence),
+            message = message,
             severity = mapVerdictToSeverity(verdict),
             suggestions = suggestionsParagraph.ifBlank { "• No additional suggestions." }
         )
 
         alertsRecycler.adapter = AlertAdapter(listOf(alert))
-    }
-
-    private fun buildVerdictMessage(verdict: String?, confidence: String?): String {
-        val v = verdict?.trim().orEmpty()
-        val c = confidence?.trim().orEmpty()
-        return when {
-            v.isNotEmpty() && c.isNotEmpty() -> "Verdict: $v (confidence: $c%)"
-            v.isNotEmpty()                   -> "Verdict: $v"
-            c.isNotEmpty()                   -> "Confidence: $c%"
-            else                             -> "Latest analysis from assistant."
-        }
     }
 
     private fun mapVerdictToSeverity(verdict: String?): String {
