@@ -1,7 +1,26 @@
 <resources xmlns:tools="http://schemas.android.com/tools">
     <!-- Base application theme. -->
     <style name="Base.Theme.MyAccessibilityApp" parent="Theme.Material3.DayNight.NoActionBar">
-        <!-- Customize your dark theme here. -->
-        <!-- <item name="colorPrimary">@color/my_dark_primary</item> -->
+        <!-- Brand -->
+        <item name="colorPrimary">@color/t_magenta</item>
+        <item name="colorOnPrimary">@color/fg_white</item>
+        <item name="colorSecondary">@color/t_magenta_light</item>
+
+        <!-- Surface/background (dark) -->
+        <item name="android:colorBackground">@color/bg_dark</item>
+        <item name="android:textColorPrimary">@color/fg_white</item>
+        <item name="android:textColorSecondary">@color/fg_subtle</item>
+
+        <!-- System bars -->
+        <item name="android:statusBarColor">@color/status_bar_transparent</item>
+        <item name="android:navigationBarColor">@color/nav_bar_transparent</item>
+        <item name="android:windowLightStatusBar">false</item>
+
+        <item name="android:windowTranslucentStatus">true</item>
+        <item name="android:windowTranslucentNavigation">true</item>
+
+        <item name="shapeAppearanceSmallComponent">@style/Shape.Rounded.M</item>
+        <item name="shapeAppearanceMediumComponent">@style/Shape.Rounded.L</item>
+        <item name="shapeAppearanceLargeComponent">@style/Shape.Rounded.XL</item>
     </style>
 </resources>

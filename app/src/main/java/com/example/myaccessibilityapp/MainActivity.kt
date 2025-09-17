@@ -9,7 +9,9 @@ import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
 import android.provider.Settings
+import android.view.View
 import android.widget.Button
+import android.widget.CheckBox
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 
@@ -17,12 +19,15 @@ class MainActivity : AppCompatActivity() {
 
     private lateinit var statusView: TextView
     private lateinit var btnEnable: Button
+    private lateinit var cbBiometrics: CheckBox
+    private lateinit var cbPrivacy: CheckBox
 
-    // Use the raw action string so this compiles on any compileSdk
+    private val prefs by lazy { getSharedPreferences("app_prefs", Context.MODE_PRIVATE) }
+    private val KEY_CONSENT_DONE = "consent_done"
+
     private val ACTION_ACCESSIBILITY_DETAILS_SETTINGS =
         "android.settings.ACCESSIBILITY_DETAILS_SETTINGS"
 
-    // Observe changes to enabled accessibility services so we can update UI instantly
     private val enabledServicesUri =
         Settings.Secure.getUriFor(Settings.Secure.ENABLED_ACCESSIBILITY_SERVICES)
 
@@ -39,8 +44,24 @@ class MainActivity : AppCompatActivity() {
 
         statusView = findViewById(R.id.accessibilityStatus)
         btnEnable = findViewById(R.id.btnEnable)
+        cbBiometrics = findViewById(R.id.cbBiometrics)
+        cbPrivacy = findViewById(R.id.cbPrivacy)
 
-        btnEnable.setOnClickListener { openAccessibilityScreen() }
+        // Restore previous state
+        if (prefs.getBoolean(KEY_CONSENT_DONE, false)) hideConsentSection()
+
+        // Watch checkboxes to enable/disable button
+        val watcher = { updateEnableButton() }
+        cbBiometrics.setOnCheckedChangeListener { _, _ -> watcher() }
+        cbPrivacy.setOnCheckedChangeListener { _, _ -> watcher() }
+        updateEnableButton()
+
+        btnEnable.setOnClickListener {
+            // Mark consent as done and hide checkboxes permanently
+            prefs.edit().putBoolean(KEY_CONSENT_DONE, true).apply()
+            hideConsentSection()
+            openAccessibilityScreen()
+        }
 
         updateUi()
     }
@@ -56,6 +77,25 @@ class MainActivity : AppCompatActivity() {
         contentResolver.unregisterContentObserver(settingsObserver)
     }
 
+    private fun updateEnableButton() {
+        val ready = cbBiometrics.isChecked && cbPrivacy.isChecked
+        btnEnable.isEnabled = ready
+
+        // Style based on state (using your colors.xml)
+        if (ready) {
+            btnEnable.setBackgroundColor(getColor(R.color.t_plum))
+            btnEnable.setTextColor(getColor(R.color.fg_white))
+        } else {
+            btnEnable.setBackgroundColor(getColor(R.color.t_plum))
+            btnEnable.setTextColor(getColor(R.color.fg_subtle))
+        }
+    }
+
+    private fun hideConsentSection() {
+        cbBiometrics.visibility = View.GONE
+        cbPrivacy.visibility = View.GONE
+    }
+
     private fun updateUi() {
         val enabled = isAccessibilityServiceEnabled(this, MyAccessibilityServiceOld::class.java)
         statusView.text = if (enabled) "Accessibility: ON" else "Accessibility: OFF"
@@ -66,30 +106,25 @@ class MainActivity : AppCompatActivity() {
         val pkg = packageName
         val serviceComponent = ComponentName(this, MyAccessibilityServiceOld::class.java)
 
-        // Try the app-specific Accessibility details screen (Android 10+)
         val detailsIntent = Intent(ACTION_ACCESSIBILITY_DETAILS_SETTINGS).apply {
             data = Uri.parse("package:$pkg")
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
-            // Some OEMs honor this extra to preselect your service
             putExtra(
                 "android.provider.extra.ACCESSIBILITY_SERVICE_COMPONENT_NAME",
                 serviceComponent.flattenToString()
             )
         }
 
-        // Fallback: generic Accessibility Settings (all versions)
         val genericIntent = Intent(Settings.ACTION_ACCESSIBILITY_SETTINGS).apply {
             addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
         }
 
-        // Try details first, then fallback
         try {
             startActivity(detailsIntent)
         } catch (_: Exception) {
             try {
                 startActivity(genericIntent)
             } catch (_: Exception) {
-                // As a last resort, open app settings
                 val appSettings = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
                     data = Uri.parse("package:$pkg")
                     addFlags(Intent.FLAG_ACTIVITY_NEW_TASK)

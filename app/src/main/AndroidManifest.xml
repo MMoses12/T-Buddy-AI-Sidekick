@@ -33,7 +33,7 @@
 
         <!-- AccessibilityService -->
         <service
-            android:name=".MyAccessibilityService"
+            android:name=".TBuddy"
             android:exported="false"
             android:label="@string/accessibility_service_label"
             android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE">
@@ -44,6 +44,18 @@
                 android:name="android.accessibilityservice"
                 android:resource="@xml/accessibility_service_config" />
         </service>
+<!--        <service-->
+<!--            android:name=".UrlAccessibilityService"-->
+<!--            android:permission="android.permission.BIND_ACCESSIBILITY_SERVICE"-->
+<!--            android:exported="true">-->
+<!--            <intent-filter>-->
+<!--                <action android:name="android.accessibilityservice.AccessibilityService" />-->
+<!--            </intent-filter>-->
+<!--            <meta-data-->
+<!--                android:name="android.accessibilityservice"-->
+<!--                android:resource="@xml/accessibility_service_config" />-->
+<!--        </service>-->
+
 
     </application>
 

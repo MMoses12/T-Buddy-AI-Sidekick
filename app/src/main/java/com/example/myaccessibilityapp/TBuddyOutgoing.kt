@@ -69,9 +69,9 @@ class MyAccessibilityServiceOld : AccessibilityService() {
                     delay(500)
 
                     // 1) Show temporary "checking" bubble
-                    withContext(Dispatchers.Main) {
-                        showCoachBubble("T-Buddy", "🔎 Checking your message…")
-                    }
+//                    withContext(Dispatchers.Main) {
+//                        showCoachBubble("T-Buddy", "🔎 Checking your message…")
+//                    }
 
 //                  2) Send text to backend
                     val warningType = analyzeTextWithApi(text)

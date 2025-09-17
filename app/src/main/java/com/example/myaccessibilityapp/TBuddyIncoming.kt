@@ -17,33 +17,33 @@ import kotlinx.coroutines.*
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
 
-class TBuddy : AccessibilityService() {
+class TBuddyIncoming : AccessibilityService() {
 
-    private val TAG = "TBuddy"
+    private val TAG = "MyAccessibilityService"
 
-    // ---- API
     private val gson = Gson()
     private val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:5000/") // emulator; on device use PC LAN IP
+            .baseUrl("http://10.0.2.2:5000/")  // emulator; use LAN IP on device
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)
     }
 
+    private val apiForUrls: ApiService by lazy {
+        Retrofit.Builder()
+            .baseUrl("http://10.0.2.2:5000/")  // emulator; use LAN IP on device
+            .addConverterFactory(GsonConverterFactory.create())
+            .build()
+            .create(ApiService::class.java)
+    }
     enum class WarningType { PERSONAL_DATA, SENTIMENT_NEGATIVE, HARM_NEGATIVE, NONE }
 
-    // ---- coroutines
-    private val serviceScope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
-    private var uiPollJob: Job? = null           // conversation watcher polling
-    private var uiDebounceJob: Job? = null       // debounce for tree/Window changes
-    private var typedDebounceJob: Job? = null    // debounce for TYPE_VIEW_TEXT_CHANGED
-
     // ---- state
-    private var currentPkg: String? = null
+    private var eventJob: Job? = null
     private var convoWatcher: ConversationWatcher? = null
-    private val lastIncomingHashPerApp = mutableMapOf<String, Int>() // dedupe incoming
-    private val lastTypedHashPerApp    = mutableMapOf<String, Int>() // dedupe typed
+    private var currentPkg: String? = null
+    private val lastMsgHashPerApp = mutableMapOf<String, Int>()
 
     // ---- bubble UI
     private var coachView: View? = null
@@ -60,90 +60,76 @@ class TBuddy : AccessibilityService() {
             WindowManager.LayoutParams.FLAG_NOT_FOCUSABLE or WindowManager.LayoutParams.FLAG_LAYOUT_IN_SCREEN,
             PixelFormat.TRANSLUCENT
         ).apply { gravity = Gravity.BOTTOM or Gravity.END; x = 32; y = 32 }
-        Log.d(TAG, "Service connected")
+        Log.d(TAG, "Accessibility service connected")
     }
 
     override fun onAccessibilityEvent(event: AccessibilityEvent) {
-        val pkg = event.packageName?.toString() ?: return
+        val type = event.eventType
+        if (type != AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED &&
+            type != AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED &&
+            type != AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED &&
+            type != AccessibilityEvent.TYPE_VIEW_SCROLLED) return
 
-        // Track transitions between messaging vs non-messaging apps
+        val pkg = event.packageName?.toString() ?: return
         if (!isMessagingApp(pkg)) {
+            // Leaving a messaging app? stop watcher
             if (currentPkg != null && currentPkg != pkg) convoWatcher?.stop()
             currentPkg = null
             return
         }
+
         currentPkg = pkg
 
-        when (event.eventType) {
-            AccessibilityEvent.TYPE_VIEW_TEXT_CHANGED -> {
-                // Outgoing typing (from editable fields)
-                val isFromEditable = event.source?.isEditable == true || event.className?.toString()?.contains("EditText", true) == true
-                val typedText = event.text?.joinToString(" ")?.trim().orEmpty()
-                if (isFromEditable && typedText.isNotBlank()) {
-                    // Debounce: user is still typing
-                    typedDebounceJob?.cancel()
-                    typedDebounceJob = serviceScope.launch {
-                        delay(500)
-                        analyzeTypedIfNew(pkg, typedText)
-                    }
-                }
-                // Also nudge the convo watcher if we’re clearly in a chat
-                pokeOrStartWatcher(pkg)
+        // Debounce bursts
+        eventJob?.cancel()
+        eventJob = CoroutineScope(Dispatchers.Default).launch {
+            delay(120) // tiny delay; we'll poll too
+
+            val root = rootInActiveWindow ?: return@launch
+            val inConv = isConversationScreen(root)
+            if (!inConv) {
+                // If we were watching and we left the chat, stop watcher
+                convoWatcher?.stop()
+                return@launch
             }
 
-            AccessibilityEvent.TYPE_WINDOW_STATE_CHANGED,
-            AccessibilityEvent.TYPE_WINDOW_CONTENT_CHANGED,
-            AccessibilityEvent.TYPE_VIEW_SCROLLED -> {
-                // Incoming/messages UI changed -> debounce and extract last message
-                uiDebounceJob?.cancel()
-                uiDebounceJob = serviceScope.launch {
-                    delay(120)
-                    val root = rootInActiveWindow ?: return@launch
-                    if (!isConversationScreen(root)) {
-                        convoWatcher?.stop()
-                        return@launch
-                    }
-                    pokeOrStartWatcher(pkg)
-                    extractIncomingAndSendIfNew(pkg, root)
-                }
+            // Start or refresh the watcher for this pkg
+            if (convoWatcher?.pkg != pkg) {
+                convoWatcher?.stop()
+                convoWatcher = ConversationWatcher(pkg).also { it.start() }
+            } else {
+                convoWatcher?.poke() // extend lifetime on activity
             }
+
+            // Also attempt an immediate extract on this event
+            extractAndSendIfNew(pkg, root)
         }
     }
 
-    override fun onInterrupt() {
-        hideCoachBubble()
-    }
-
-    override fun onDestroy() {
-        super.onDestroy()
-        serviceScope.cancel()
-        convoWatcher?.stop()
-        uiPollJob?.cancel()
-        uiDebounceJob?.cancel()
-        typedDebounceJob?.cancel()
-        hideCoachBubble()
-    }
+    override fun onInterrupt() { hideCoachBubble() }
 
     // ---------- ConversationWatcher ----------
     private inner class ConversationWatcher(val pkg: String) {
         private var job: Job? = null
         private var lastSignature: Int? = null
-        private val hasPokes = java.util.concurrent.atomic.AtomicBoolean(true)
 
         fun start() {
             job?.cancel()
-            job = serviceScope.launch {
+            job = CoroutineScope(Dispatchers.Default).launch {
                 val startedAt = System.currentTimeMillis()
                 while (isActive) {
-                    delay(650)
+                    delay(650) // gentle poll; catches silent updates
                     val root = rootInActiveWindow ?: continue
                     if (!isConversationScreen(root)) break
 
+                    // Simple signature: count + some text hash of the tree to detect change
                     val sig = buildTreeSignature(root)
                     if (sig != lastSignature) {
                         lastSignature = sig
-                        extractIncomingAndSendIfNew(pkg, root)
+                        extractAndSendIfNew(pkg, root)
                     }
+
+                    // If idle > 12s without pokes, stop to save battery
                     if (System.currentTimeMillis() - startedAt > 12_000 && !hasPokes.getAndSet(false)) break
                 }
                 Log.d(TAG, "ConversationWatcher stopped for $pkg")
@@ -151,64 +137,9 @@ class TBuddy : AccessibilityService() {
             Log.d(TAG, "ConversationWatcher started for $pkg")
         }
 
+        private val hasPokes = java.util.concurrent.atomic.AtomicBoolean(true)
         fun poke() { hasPokes.set(true) }
         fun stop() { job?.cancel(); job = null }
-    }
-
-    private fun pokeOrStartWatcher(pkg: String) {
-        if (convoWatcher?.pkg != pkg) {
-            convoWatcher?.stop()
-            convoWatcher = ConversationWatcher(pkg).also { it.start() }
-        } else {
-            convoWatcher?.poke()
-        }
-    }
-
-    // ---------- Incoming extraction ----------
-    private suspend fun extractIncomingAndSendIfNew(pkg: String, root: AccessibilityNodeInfo) {
-        val last = LastMessageExtractor.extractLast(root) ?: return
-        val hash = (pkg + "|" + last.text).hashCode()
-        if (lastIncomingHashPerApp[pkg] == hash) return
-        lastIncomingHashPerApp[pkg] = hash
-
-//        withContext(Dispatchers.Main) {
-//            showCoachBubble("T-Buddy", "🔎 Checking the last message…")
-//        }
-        val warning = analyzeTextWithApi(last.text)
-        withContext(Dispatchers.Main) { showWarningOrHide(warning) }
-    }
-
-    // ---------- Outgoing (typed) analysis ----------
-    private suspend fun analyzeTypedIfNew(pkg: String, typed: String) {
-        val hash = (pkg + "|" + typed).hashCode()
-        if (lastTypedHashPerApp[pkg] == hash) return
-        lastTypedHashPerApp[pkg] = hash
-
-        Log.d(TAG, "Typed message captured from $pkg: \"$typed\"")
-
-        withContext(Dispatchers.Main) {
-            showCoachBubble("T-Buddy", "🔎 Checking your message…")
-        }
-        val warning = analyzeTextWithApi(typed)
-        withContext(Dispatchers.Main) { showWarningOrHide(warning) }
-    }
-
-    private fun showWarningOrHide(warning: WarningType) {
-        when (warning) {
-            WarningType.PERSONAL_DATA -> showCoachBubble("Warning!", "⚠️ Personal data detected.")
-            WarningType.SENTIMENT_NEGATIVE -> showCoachBubble("Warning!", "⚠️ Negative sentiment detected.")
-            WarningType.HARM_NEGATIVE -> showCoachBubble("Warning!", "⚠️ Harmful language detected.")
-            WarningType.NONE -> hideCoachBubble()
-        }
-    }
-
-    // ---------- Helpers ----------
-    private fun isMessagingApp(pkg: String) = when (pkg) {
-        "com.facebook.orca", "com.whatsapp", "com.viber.voip", "com.discord",
-        "com.google.android.apps.messaging", "org.telegram.messenger",
-        "org.thunderdog.challegram", "com.snapchat.android", "com.instagram.android"
-            -> true
-        else -> false
     }
 
     private fun buildTreeSignature(root: AccessibilityNodeInfo): Int {
@@ -227,6 +158,28 @@ class TBuddy : AccessibilityService() {
         return count
     }
 
+    // ---------- core: extract + send if new ----------
+    private suspend fun extractAndSendIfNew(pkg: String, root: AccessibilityNodeInfo) {
+        val last = LastMessageExtractor.extractLast(root) ?: return
+        val hash = (pkg + "|" + last.text).hashCode()
+        if (lastMsgHashPerApp[pkg] == hash) return
+        lastMsgHashPerApp[pkg] = hash
+
+        withContext(Dispatchers.Main) {
+            showCoachBubble("T-Buddy", "🔎 Checking the last message…")
+        }
+        val warning = analyzeTextWithApi(last.text)
+        withContext(Dispatchers.Main) {
+            when (warning) {
+                WarningType.PERSONAL_DATA -> showCoachBubble("Warning!", "⚠️ Personal data detected.")
+                WarningType.SENTIMENT_NEGATIVE -> showCoachBubble("Warning!", "⚠️ Negative sentiment detected.")
+                WarningType.HARM_NEGATIVE -> showCoachBubble("Warning!", "⚠️ Harmful language detected.")
+                WarningType.NONE -> hideCoachBubble()
+            }
+        }
+    }
+
+    // ---------- Conversation detection (same as before) ----------
     private fun isConversationScreen(root: AccessibilityNodeInfo): Boolean {
         val screen = android.graphics.Rect().also { root.getBoundsInScreen(it) }
         val bottomZoneY = screen.top + (screen.height() * 0.65f).toInt()
@@ -277,6 +230,15 @@ class TBuddy : AccessibilityService() {
         return inConv
     }
 
+    private fun isMessagingApp(pkg: String) = when (pkg) {
+        "com.facebook.orca", "com.whatsapp", "com.viber.voip", "com.discord",
+        "com.google.android.apps.messaging", "org.telegram.messenger",
+        "org.thunderdog.challegram", "com.snapchat.android", "com.instagram.android"
+            -> true
+        else -> false
+    }
+
+    // ---- bubble helpers (unchanged)
     private fun showCoachBubble(title: String, message: String) {
         hideCoachBubble()
         coachView = LayoutInflater.from(this).inflate(R.layout.view_tbuddy_coach, null)
@@ -291,7 +253,6 @@ class TBuddy : AccessibilityService() {
             coachView!!.postDelayed({ hideCoachBubble() }, 4000)
         } catch (_: Exception) {}
     }
-
     private fun hideCoachBubble() {
         coachView?.let { view ->
             try {
@@ -312,11 +273,8 @@ class TBuddy : AccessibilityService() {
                 response.body()?.finalVerdict?.let {
                     if (it.personalDataProbability > 0.70) return WarningType.PERSONAL_DATA
                     if (it.sentimentNegativeProbability > 0.70) return WarningType.SENTIMENT_NEGATIVE
-                    // if (it.harmNegativeProbability > 0.70) return WarningType.HARM_NEGATIVE
                 }
-            } else {
-                Log.e(TAG, "API failed: ${response.code()} ${response.message()}")
-            }
+            } else Log.e(TAG, "API failed: ${response.code()} ${response.message()}")
         } catch (e: Exception) {
             Log.e(TAG, "API exception: ${e.message}", e)
         }

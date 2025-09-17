@@ -4,4 +4,11 @@
     <string name="app_name">MyAccessibilityApp</string>
     <string name="accessibility_service_label">My Custom Accessibility Service</string>
     <string name="accessibility_service_description">This service monitors app events to provide custom accessibility features.</string>
+    <string name="consent_biometrics">
+        I have been informed and I consent to the use of my biometric data (face image) for the purpose of verifying and validating my identity.
+    </string>
+
+    <string name="consent_privacy">
+        I have been informed about how my personal data is protected and processed.
+    </string>
 </resources>

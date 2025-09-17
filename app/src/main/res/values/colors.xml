@@ -1,8 +1,35 @@
-<resources>
+<resources xmlns:android="http://schemas.android.com/apk/res/android">
+    <!-- Your existing brand palette -->
     <color name="t_magenta">#E10075</color>
     <color name="t_magenta_light">#FF6FD8</color>
     <color name="t_plum">#8A004F</color>
     <color name="bg_dark">#101014</color>
     <color name="fg_white">#FFFFFF</color>
     <color name="fg_subtle">#DADBE1</color>
+
+    <!-- Added: helpful aliases + UI tokens for the chat -->
+    <color name="t_magenta_dark">#C20063</color>
+
+    <!-- Chat bubbles -->
+    <color name="bubble_outgoing_bg">@color/t_magenta</color>
+    <color name="bubble_outgoing_text">@color/fg_white</color>
+    <color name="bubble_incoming_bg">#FFFFFFFF</color>
+    <color name="bubble_incoming_text">#1B1B1B</color>
+    <color name="bubble_incoming_stroke">#11000000</color>
+
+    <!-- Chips / header pill -->
+    <color name="chip_bg">#26FFFFFF</color> <!-- white @ 15% -->
+
+    <!-- Input field -->
+    <color name="input_bg">#FFFFFFFF</color>
+    <color name="input_stroke">#22000000</color>
+
+    <!-- Gradient stops (match the T vibe) -->
+    <color name="grad_start">@color/t_magenta</color>
+    <color name="grad_center">#FFE97AA9</color>
+    <color name="grad_end">#FFFFFFFF</color>
+
+    <!-- System bars -->
+    <color name="status_bar_transparent">#00000000</color>
+    <color name="nav_bar_transparent">#00000000</color>
 </resources>

@@ -77,14 +77,38 @@
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="T-Buddy needs Accessibility to coach you across apps. We’ll take you straight to the right screen."
-            android:textColor="#EDEAF2"
+            android:textColor="@color/fg_subtle"
             android:textSize="14sp"/>
 
+        <!-- Button initially disabled -->
         <Button
             android:id="@+id/btnEnable"
-            android:layout_width="wrap_content"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="16dp"
-            android:text="Open Accessibility for T-Buddy"/>
+            android:text="Open Accessibility for T-Buddy"
+            android:enabled="false" />
+
+        <CheckBox
+            android:id="@+id/cbBiometrics"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="32dp"
+            android:text="@string/consent_biometrics"
+            android:textColor="@color/fg_subtle"
+            android:textSize="14sp"
+            android:buttonTint="@color/fg_white" />
+
+        <CheckBox
+            android:id="@+id/cbPrivacy"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="@string/consent_privacy"
+            android:textColor="@color/fg_subtle"
+            android:textSize="14sp"
+            android:buttonTint="@color/fg_white" />
+
     </LinearLayout>
+
 </androidx.constraintlayout.widget.ConstraintLayout>
