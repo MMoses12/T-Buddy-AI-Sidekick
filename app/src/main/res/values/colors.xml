@@ -32,4 +32,10 @@
     <!-- System bars -->
     <color name="status_bar_transparent">#00000000</color>
     <color name="nav_bar_transparent">#00000000</color>
+
+    <color name="pink_600">#E20074</color>          <!-- T-Magenta vibe -->
+    <color name="deep_pink_text">#C50066</color>
+    <color name="pink_ripple">#33E20074</color>
+
+
 </resources>

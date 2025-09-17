@@ -1,5 +1,7 @@
 package com.example.myaccessibilityapp
 
+import com.example.myaccessibilityapp.factChecker.FactCheckRequest
+import com.example.myaccessibilityapp.factChecker.FactCheckResponse
 import retrofit2.Response
 import retrofit2.http.Body
 import retrofit2.http.POST
@@ -13,4 +15,8 @@ interface ApiService {
      */
     @POST("analyze")
     suspend fun analyzeText(@Body request: ApiRequest): Response<ApiResponse>
+
+
+    @POST("newsCheck") // adjust if your path differs
+    suspend fun checkNews(@Body body: FactCheckRequest): Response<FactCheckResponse>
 }
