@@ -16,6 +16,7 @@ import com.google.gson.Gson
 import kotlinx.coroutines.*
 import retrofit2.Retrofit
 import retrofit2.converter.gson.GsonConverterFactory
+import android.content.Intent
 
 class TBuddy : AccessibilityService() {
 
@@ -50,6 +51,11 @@ class TBuddy : AccessibilityService() {
     private lateinit var windowManager: WindowManager
     private lateinit var params: WindowManager.LayoutParams
 
+
+    private var lastRecommendation: String? = null
+    private var lastSuggestedRewrite: String? = null
+    private var lastVerdict: String? = null
+    private var lastConfidence: String? = null
     override fun onServiceConnected() {
         super.onServiceConnected()
         windowManager = getSystemService(WINDOW_SERVICE) as WindowManager
@@ -277,42 +283,94 @@ class TBuddy : AccessibilityService() {
         return inConv
     }
 
-    private fun showCoachBubble(title: String, message: String) {
+    private fun showCoachBubble(
+        title: String,
+        message: String,
+        onSeeMore: (() -> Unit)? = null,
+        onSkip:   (() -> Unit)? = null
+    ) {
         hideCoachBubble()
-        coachView = LayoutInflater.from(this).inflate(R.layout.view_tbuddy_coach, null)
-        coachView!!.findViewById<View>(R.id.tbuddyCoach).visibility = View.VISIBLE
-        coachView!!.findViewById<TextView>(R.id.title).text = title
-        coachView!!.findViewById<TextView>(R.id.message).text = message
-        coachView!!.findViewById<ImageView>(R.id.buddy).setImageResource(R.drawable.robot)
+
+        coachView = LayoutInflater.from(this).inflate(R.layout.view_tbuddy_coach, null).apply {
+            findViewById<View>(R.id.tbuddyCoach).visibility = View.VISIBLE
+            findViewById<TextView>(R.id.title).text = title
+            findViewById<TextView>(R.id.message).text = message
+            findViewById<ImageView>(R.id.buddy).setImageResource(R.drawable.robot)
+
+            // "See more" – placeholder
+            findViewById<View>(R.id.btnRephrase).setOnClickListener {
+                hideCoachBubble()
+                onSeeMore?.invoke() ?: openAlertPage()
+            }
+
+            // "Skip" – close the bubble
+            findViewById<View>(R.id.btnSendAnyway).setOnClickListener {
+                onSkip?.invoke()
+                hideCoachBubble()
+            }
+        }
+
         try {
             windowManager.addView(coachView, params)
-            val fadeIn = AlphaAnimation(0f, 1f).apply { duration = 300; fillAfter = true }
+            val fadeIn = AlphaAnimation(0f, 1f).apply { duration = 10000000; fillAfter = true }
             coachView!!.startAnimation(fadeIn)
-            coachView!!.postDelayed({ hideCoachBubble() }, 4000)
-        } catch (_: Exception) {}
+        } catch (_: Exception) { /* no-op */ }
     }
 
     private fun hideCoachBubble() {
-        coachView?.let { view ->
-            try {
-                val fadeOut = AlphaAnimation(1f, 0f).apply { duration = 300; fillAfter = true }
-                view.startAnimation(fadeOut)
-                view.postDelayed({ try { windowManager.removeView(view) } catch (_: Exception) {} }, 300)
-            } catch (_: Exception) {}
-        }
+        val view = coachView ?: return
         coachView = null
+        try {
+            val fadeOut = AlphaAnimation(1f, 0f).apply { duration = 100000000; fillAfter = true }
+            view.startAnimation(fadeOut)
+            view.postDelayed({
+                try { windowManager.removeView(view) } catch (_: Exception) { /* no-op */ }
+            }, 300)
+        } catch (_: Exception) { /* no-op */ }
     }
 
-    private suspend fun analyzeTextWithApi(text: String): WarningType {
+    private fun openAlertPage() {
+        hideCoachBubble()
+
+        val intent = Intent(
+            this,
+            com.example.myaccessibilityapp.safetyAlerts.SafetyAlertsActivity::class.java
+        ).apply {
+            addFlags(Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP)
+
+            // Pass the new API fields
+            putExtra("recommendation", lastRecommendation)
+            putExtra("suggested_rewrite", lastSuggestedRewrite)
+            putExtra("verdict", lastVerdict)
+            putExtra("confidence", lastConfidence)
+        }
+        startActivity(intent)
+    }
+
+
+
+    private suspend fun analyzeTextWithApi(text: String, isOutgoing: Boolean = false): WarningType {
         try {
             val request = ApiRequest(text = text)
             Log.i(TAG, "Sending Payload: ${gson.toJson(request)}")
             val response = apiService.analyzeText(request)
             if (response.isSuccessful) {
-                response.body()?.finalVerdict?.let {
+                val body = response.body()
+
+                // --- keep your existing thresholds (finalVerdict) ---
+                body?.finalVerdict?.let {
                     if (it.personalDataProbability > 0.70) return WarningType.PERSONAL_DATA
                     if (it.sentimentNegativeProbability > 0.70) return WarningType.SENTIMENT_NEGATIVE
-                    // if (it.harmNegativeProbability > 0.70) return WarningType.HARM_NEGATIVE
+                    if (it.harmNegativeProbability > 0.70) return WarningType.HARM_NEGATIVE
+                }
+
+                // --- NEW: capture result block for UI ---
+                body?.result?.let { r ->
+                    lastRecommendation   = r.recommendation
+                    lastVerdict          = r.verdict
+                    lastConfidence       = r.confidence
+                    lastSuggestedRewrite = if (isOutgoing) r.suggested_rewrite else null
+                    Log.d(TAG, "result: verdict=${r.verdict}, conf=${r.confidence}, rec=${r.recommendation}, rewrite=$lastSuggestedRewrite")
                 }
             } else {
                 Log.e(TAG, "API failed: ${response.code()} ${response.message()}")

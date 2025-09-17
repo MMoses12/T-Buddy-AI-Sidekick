@@ -24,7 +24,7 @@ class TBuddyIncoming : AccessibilityService() {
     private val gson = Gson()
     private val apiService: ApiService by lazy {
         Retrofit.Builder()
-            .baseUrl("http://10.0.2.2:5000/")  // emulator; use LAN IP on device
+            .baseUrl("http://127.0.0.1:5000/")  // emulator; use LAN IP on device
             .addConverterFactory(GsonConverterFactory.create())
             .build()
             .create(ApiService::class.java)

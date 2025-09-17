@@ -1,0 +1,96 @@
+<androidx.coordinatorlayout.widget.CoordinatorLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:fitsSystemWindows="true"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent">
+
+    <!-- background -->
+    <ImageView
+        android:src="@drawable/bg_magenta_gradient"
+        android:scaleType="fitXY"
+        android:contentDescription="@null"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"/>
+
+    <LinearLayout
+        android:orientation="vertical"
+        android:paddingStart="16dp"
+        android:paddingEnd="16dp"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent">
+
+        <LinearLayout
+            android:layout_marginTop="36dp"
+            android:gravity="center_horizontal"
+            android:orientation="vertical"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <LinearLayout
+                android:layout_marginTop="8dp"
+                android:padding="10dp"
+                android:background="@drawable/bg_toolbar_card"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content">
+
+                <LinearLayout
+                    android:orientation="vertical"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content">
+
+                    <TextView
+                        android:text="T-Buddy"
+                        android:textStyle="bold"
+                        android:textSize="18sp"
+                        android:textColor="@android:color/white"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"/>
+                </LinearLayout>
+            </LinearLayout>
+        </LinearLayout>
+
+        <!-- Messages list -->
+        <androidx.recyclerview.widget.RecyclerView
+            android:id="@+id/rvMessages"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="12dp"
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:overScrollMode="never"
+            app:layoutManager="androidx.recyclerview.widget.LinearLayoutManager"
+            android:layout_weight="1" />
+
+        <!-- Input bar -->
+        <LinearLayout
+            android:layout_marginBottom="12dp"
+            android:gravity="center_vertical"
+            android:padding="6dp"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <EditText
+                android:id="@+id/etMessage"
+                android:background="@drawable/bg_input"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                android:hint="Type a message…"
+                android:imeOptions="actionSend"
+                android:maxLines="4"
+                android:minHeight="48dp"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1" />
+
+            <ImageButton
+                android:id="@+id/btnSend"
+                android:layout_marginStart="8dp"
+                android:background="@drawable/bg_send"
+                android:src="@android:drawable/ic_menu_send"
+                android:contentDescription="Send"
+                android:layout_width="48dp"
+                android:layout_height="48dp"
+                app:tint="@android:color/white" />
+        </LinearLayout>
+    </LinearLayout>
+
+</androidx.coordinatorlayout.widget.CoordinatorLayout>

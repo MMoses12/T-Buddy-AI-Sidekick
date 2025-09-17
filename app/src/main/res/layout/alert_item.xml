@@ -1,0 +1,84 @@
+<?xml version="1.0" encoding="utf-8"?>
+<androidx.cardview.widget.CardView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:layout_marginBottom="12dp"
+    app:cardCornerRadius="16dp"
+    app:cardUseCompatPadding="true"
+    app:cardBackgroundColor="@android:color/transparent">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:background="@drawable/bg_card_alert"
+        android:padding="16dp">
+
+        <!-- Alert header row -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="horizontal"
+            android:gravity="center_vertical"
+            android:layout_marginBottom="8dp">
+
+            <TextView
+                android:id="@+id/tvAlertTitle"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Harassment Detected"
+                android:textColor="@android:color/white"
+                android:textStyle="bold"
+                android:textSize="18sp"
+                android:layout_marginStart="8dp"
+                android:layout_marginEnd="8dp"/>
+
+            <TextView
+                android:id="@+id/tvSeverity"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:paddingHorizontal="10dp"
+                android:paddingVertical="4dp"
+                android:text="High"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#E6007E"
+                android:background="@drawable/badge_severity"/>
+        </LinearLayout>
+
+        <TextView
+            android:id="@+id/tvAlertMessage"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="We found messages that look like harassment."
+            android:textColor="@android:color/white"
+            android:textSize="14sp"
+            android:layout_marginBottom="10dp"/>
+
+        <!-- Suggestions label -->
+        <TextView
+            android:id="@+id/tvSuggestionsLabel"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Suggestions:"
+            android:textColor="@android:color/white"
+            android:textStyle="bold"
+            android:textSize="16sp"
+            android:layout_marginTop="12dp"
+            android:layout_marginBottom="6dp"/>
+
+        <!-- Suggestions paragraph -->
+        <TextView
+            android:id="@+id/tvSuggestionsParagraph"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="• Block the user\n• Report this incident\n• Call for help"
+            android:textColor="@android:color/white"
+            android:textSize="15sp"
+            android:lineSpacingExtra="4dp"
+            android:layout_marginBottom="8dp"/>
+    </LinearLayout>
+</androidx.cardview.widget.CardView>

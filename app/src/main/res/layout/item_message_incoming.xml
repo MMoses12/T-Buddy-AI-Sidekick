@@ -1,0 +1,22 @@
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:gravity="start"
+    android:paddingStart="0dp"
+    android:paddingEnd="56dp"
+    android:paddingTop="6dp"
+    android:paddingBottom="6dp">
+
+    <LinearLayout
+        android:background="@drawable/bg_bubble_incoming"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content">
+
+        <TextView
+            android:id="@+id/tvText"
+            android:textColor="@color/bubble_incoming_text"
+            android:textSize="16sp"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"/>
+    </LinearLayout>
+</LinearLayout>

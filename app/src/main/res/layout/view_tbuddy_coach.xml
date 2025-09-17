@@ -49,19 +49,25 @@
                     android:id="@+id/btnRephrase"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Rephrase"
+                    android:text="See more"
                     android:textStyle="bold"
                     android:textColor="#FFFFFF"
                     android:padding="6dp"
-                    android:background="@android:color/transparent"/>
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless" />
 
                 <TextView
                     android:id="@+id/btnSendAnyway"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Send anyway"
+                    android:text="Skip"
                     android:textColor="#FFFFFF"
-                    android:padding="6dp"/>
+                    android:padding="6dp"
+                    android:clickable="true"
+                    android:focusable="true"
+                    android:background="?android:attr/selectableItemBackgroundBorderless" />
+
             </LinearLayout>
         </LinearLayout>
 

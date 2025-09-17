@@ -31,6 +31,12 @@
             </intent-filter>
         </activity>
 
+        <activity
+            android:name="com.example.myaccessibilityapp.safetyAlerts.SafetyAlertsActivity"
+            android:exported="true"
+            android:label="Safety Alerts"
+            android:theme="@style/Theme.MyAccessibilityApp" />
+
         <!-- AccessibilityService -->
         <service
             android:name=".TBuddy"
